@@ -22,8 +22,9 @@ void _spmm(csr_t* snaph, array2d_t<float> & input, array2d_t<float> & output,
     vid_t* node_value = snaph->nebrs;
     for(int i=0; i<snaph->v_count; i++){
         for(int j=0; j<output.col_count; j++){
-            int tmp_conv_num = 0;
+            float tmp_conv_num = 0;
             float* output_row_address = output[i];
+            tmp_conv_num += (float)i*input[i][j];
             for(int k=node_index[i]; k<node_index[i+1]; k++){
                 if(op==eSUM){
                     // cout << "True " << endl;
@@ -33,8 +34,9 @@ void _spmm(csr_t* snaph, array2d_t<float> & input, array2d_t<float> & output,
             output[i][j] = tmp_conv_num;
         }
         if(norm){
+            // cout << "Norm" << endl;
             float degree = node_index[i+1] - node_index[i];
-            output.row_normalize(i, degree);
+            output.row_normalize(i, degree+1);
         }
     }
     // cout << "output col number " << output.col_count << endl;
