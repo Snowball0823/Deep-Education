@@ -12,10 +12,11 @@ import pubmed_util
 import create_graph as cg
 
 
-DatasetPath = '/home/snowball/data'
+# DatasetPath = '/home/snowball/data'
 
-def main():
-    global DatasetPath
+def main(data_path):
+    # global DatasetPath
+    DatasetPath = data_path
     ingestion_flag = gone.enumGraph.eUdir
     ifile = os.path.join(DatasetPath, "pubmed/graph_structure")
     num_vcount = 19717
@@ -90,4 +91,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    path = input("Please enter the dataset path (/path/to/data)")
+    main(path)
