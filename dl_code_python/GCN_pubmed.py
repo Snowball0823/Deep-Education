@@ -14,7 +14,7 @@ import create_graph as cg
 
 # DatasetPath = '/home/snowball/data'
 
-def main(data_path):
+def main(data_path, choise):
     # global DatasetPath
     DatasetPath = data_path
     ingestion_flag = gone.enumGraph.eUdir
@@ -24,7 +24,8 @@ def main(data_path):
     G = cg.create_csr_graph_simple(ifile, num_vcount, ingestion_flag)
     
     input_feature_dim = 500
-    net = gcnconv.GCN(G, input_feature_dim, 16, 3)
+    thread_number = 4 if choise else 1
+    net = gcnconv.GCN(G, input_feature_dim, 16, 3, thread_number)
     #net = gcnconv.GCN(G, input_feature_dim, 16, 3, 3, 1)
 
     feature = pubmed_util.read_feature_info(os.path.join(DatasetPath, "pubmed/feature/feature.txt"))
@@ -91,5 +92,9 @@ def main(data_path):
 
 
 if __name__ == "__main__":
-    path = input("Please enter the dataset path (/path/to/data)")
-    main(path)
+    path = input("Please enter the dataset path (/path/to/data)\n")
+    true_tuple = ['True', 'Yes', 'Y', 'y', 'YES', 'yes']
+    nope_tuple = ['Nope', 'No', 'N', 'n', 'NO', 'no']
+    choise = input("Do you want to use the multipl-thread? Y/N\n")
+    choise = True if choise in true_tuple else False
+    main(path, choise)

@@ -26,7 +26,8 @@ class GraphConv(nn.Module):
                  weight=True,
                  bias=True,
                  activation=None,
-                 allow_zero_in_degree= True):
+                 allow_zero_in_degree= True,
+                 thread_number=1):
         super(GraphConv, self).__init__()
         if norm not in (True, 'both', 'right'):
             raise Exception('Invalid norm value. Must be either "none", "both" or "right".'
@@ -35,6 +36,7 @@ class GraphConv(nn.Module):
         self._out_feats = out_feats
         self._norm = norm
         self._allow_zero_in_degree = allow_zero_in_degree
+        self._thread_number = thread_number
 
         if weight:
             self.weight = nn.Parameter(th.Tensor(in_feats, out_feats))
@@ -102,12 +104,12 @@ class GraphConv(nn.Module):
                 #print(feat1)
             dim = feat1.size(1)
             # feature means the vertex input_feature, rst is the output 1d numpy array
-            rst = sparse.run_gspmm(graph, feat1, self._norm, num_vcount, dim)
+            rst = sparse.run_gspmm(graph, feat1, self._norm, num_vcount, dim, self._thread_number)
             #print(rst)
         else:
             dim = feat.size(1)
             # aggregate first then mult W
-            rst = sparse.run_gspmm(graph, feat, self._norm, num_vcount, dim)
+            rst = sparse.run_gspmm(graph, feat, self._norm, num_vcount, dim, self._thread_number)
             if weight is not None:
                 rst = th.matmul(rst, weight)
 
@@ -160,11 +162,11 @@ class GCN(nn.Module):
 
 """
 class GCN(nn.Module):
-    def __init__(self, graph, in_feats, hidden_size, num_classes):
+    def __init__(self, graph, in_feats, hidden_size, num_classes, thread_number=1):
         super(GCN, self).__init__()
         self.graph = graph
-        self.conv1 = GraphConv(in_feats, hidden_size)
-        self.conv2 = GraphConv(hidden_size, num_classes)
+        self.conv1 = GraphConv(in_feats, hidden_size, thread_number=thread_number)
+        self.conv2 = GraphConv(hidden_size, num_classes, thread_number=thread_number)
     def forward(self, inputs):
         h = self.conv1(self.graph, inputs)
         h = th.relu(h)

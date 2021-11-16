@@ -24,15 +24,28 @@ import enum
 
 class GSpmv(th.autograd.Function):
     @staticmethod
+    def forward(ctx, graph, X, norm, num_vcount, dim, thread_num):
+        res = gp_apis.gp_gspmm(graph, X, num_vcount, dim, 0, norm, thread_num=thread_num)  # do not specify the reduce operation
+        ctx.backward_cache = graph, norm, num_vcount, dim, thread_num
+        return res
+
+    @staticmethod
+    def backward(ctx, dZ):
+        graph, norm, num_vcount, dim, thread_num = ctx.backward_cache
+        res = gp_apis.gp_gspmm(graph, dZ, num_vcount, dim, 1, norm, thread_num=thread_num)  # do not specify the reduce operation
+        return None, res, None, None, None, None
+
+class GSpmv_sthread(th.autograd.Function):
+    @staticmethod
     def forward(ctx, graph, X, norm, num_vcount, dim):
-        res = gp_apis.gp_gspmm(graph, X, num_vcount, dim, 0, norm)  # do not specify the reduce operation
+        res = gp_apis.gp_gspmm(graph, X, num_vcount, dim, 0, norm, thread_num=1)  # do not specify the reduce operation
         ctx.backward_cache = graph, norm, num_vcount, dim
         return res
 
     @staticmethod
     def backward(ctx, dZ):
         graph, norm, num_vcount, dim = ctx.backward_cache
-        res = gp_apis.gp_gspmm(graph, dZ, num_vcount, dim, 1, norm)  # do not specify the reduce operation
+        res = gp_apis.gp_gspmm(graph, dZ, num_vcount, dim, 1, norm, thread_num=1)  # do not specify the reduce operation
         return None, res, None, None, None
 
 
@@ -243,8 +256,8 @@ class GSpmv_op_heads(th.autograd.Function):
 
 
 # the gspmv has only 1 input, and then apply different operations such as sum, max on it
-def run_gspmm(graph, X, norm, num_vcount, dim):
-    return GSpmv.apply(graph, X, norm, num_vcount, dim)
+def run_gspmm(graph, X, norm, num_vcount, dim, thread_number):
+    return GSpmv.apply(graph, X, norm, num_vcount, dim, thread_number)
 
 
 # the gspmv_op has 2 inputs, one is edge_score, another one is edge_softmax score
